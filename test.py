@@ -11,7 +11,7 @@ from tree import tree_model
 ctg_col = ['Color', 'Root', 'Knocks', 'Texture', 'Umbilicus', 'Touch']
 ctn_col = ['Density','SugerRatio']
 tar_col = ['Label']
-path = '/Users/chenyingxiang/Desktop/Zenabi/Project_Zurus/data_set/watermelon3_0_En.csv'
+path = './Testdata/watermelon3_0_En.csv'
 
 tree = tree_model(ctg_col,ctn_col,tar_col,path)
 tree.pre_process()
