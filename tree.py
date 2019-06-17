@@ -16,7 +16,7 @@ class tree_model:
     def pre_process(self, weight=1):
         data = pd.read_csv(self.path)
         data['weight'] = weight
-        data_dummy = pd.get_dummies(data,prefix=self.ctg_col, dummy_na=False)
+        data_dummy = pd.get_dummies(data,columns=self.ctg_col, dummy_na=False)
         for i in self.ctg_col:
             try:
                 index = data[data[i].isna()].index

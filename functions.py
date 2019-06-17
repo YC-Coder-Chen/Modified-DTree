@@ -28,6 +28,8 @@ def gini(dataset, tar_col):
         temp_df = dataset[[i,'weight'] + tar_col].copy()
         temp_df_clean = temp_df.dropna()
         p = temp_df_clean['weight'].sum()/temp_df['weight'].sum()
+        if np.isnan(p):
+            print(temp_df,p)
 
 
         actual_value = temp_df_clean[i].unique()
@@ -44,16 +46,25 @@ def gini(dataset, tar_col):
             left_false = check_na((left[tar_col]==0).sum()[0])
             right_true = check_na((right[tar_col]==1).sum()[0])
             right_false = check_na((right[tar_col]==0).sum()[0])
-
-            gini_left = 1 - (left_true/check_na(len(left)))**2 - (left_false/check_na(len(left)))**2
-            gini_right = 1 - (right_true/check_na(len(right)))**2 - (right_false /check_na(len(right)))**2
+            
+            if len(left)==0:
+                gini_left = 9999999
+            else:
+                gini_left = 1 - (left_true/len(left))**2 - (left_false/len(left))**2
+            if len(right)==0:
+                gini_right = 9999999
+            else:
+                gini_right = 1 - (right_true/len(right))**2 - (right_false /len(right))**2
+            
             overall_gini = (check_na(len(left))/len(temp_df_clean))*gini_left + (check_na(len(right))/len(temp_df_clean))*gini_right
-            weighted_gini = p*overall_gini 
-
+            weighted_gini = overall_gini/p
+            
+            
             if weighted_gini<best_gini:
                 split_fet = i
                 best_value = med
                 best_gini = weighted_gini
+    
     return split_fet,best_value,best_gini
 
 def get_split(dataset, tar_col):
@@ -88,21 +99,29 @@ def split(node, max_depth, min_size, min_improvement, depth, tar_col):
         node['left'] = to_terminal(left, tar_col)
     else:
         node['left'] = get_split(left, tar_col)
-        if previous_gini - node['left']['best_gini']<min_improvement:
+        #if previous_gini - node['left']['best_gini']<min_improvement:
+        if False:
             node['left'] = to_terminal(left, tar_col)
         else:
             node['Previous_left'] = to_terminal(left, tar_col)
-            split(node['left'], max_depth, min_size, min_improvement,depth+1, tar_col)
+            try:
+                split(node['left'], max_depth, min_size, min_improvement,depth+1, tar_col)
+            except:
+                node['left'] = to_terminal(left, tar_col)
     # process right child
     if len(right) <= min_size:
         node['right'] = to_terminal(right, tar_col)
     else:
         node['right'] = get_split(right, tar_col)
-        if previous_gini - node['right']['best_gini']<min_improvement:
+        #if previous_gini - node['right']['best_gini']<min_improvement:
+        if False:
             node['right'] = to_terminal(right, tar_col)
         else:
             node['Previous_right'] = to_terminal(right, tar_col)
-            split(node['right'], max_depth, min_size, min_improvement,depth+1, tar_col)
+            try:
+                split(node['right'], max_depth, min_size, min_improvement,depth+1, tar_col)
+            except:
+                node['right'] = to_terminal(right, tar_col)
 
 def print_tree_inner(node, depth): 
     if isinstance(node, dict):
