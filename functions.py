@@ -6,8 +6,8 @@ import copy
 def test_split(col_name, value, dataset):
     left = dataset[(dataset[col_name]<value)|(dataset[col_name].isna())]
     right = dataset[(dataset[col_name]>=value) | (dataset[col_name].isna())]
-    p_left = len(dataset[(dataset[col_name]<value)])/len(dataset[~dataset[col_name].isnull()])
-    p_right = len(dataset[(dataset[col_name]>=value)])/len(dataset[~dataset[col_name].isnull()])
+    p_left = dataset[(dataset[col_name]<value)]['weight'].sum()/dataset[~dataset[col_name].isnull()]['weight'].sum()
+    p_right = dataset[(dataset[col_name]>=value)]['weight'].sum()/dataset[~dataset[col_name].isnull()]['weight'].sum()
     left.loc[dataset[dataset[col_name].isna()].index,'weight'] = left.loc[dataset[dataset[col_name].isna()].index,'weight'] * p_left
     right.loc[dataset[dataset[col_name].isna()].index,'weight'] = right.loc[dataset[dataset[col_name].isna()].index,'weight'] * p_right
     return left,right
@@ -42,21 +42,26 @@ def gini(dataset, tar_col):
                 else:
                     return a
 
-            left_true = check_na((left[tar_col]==1).sum()[0])           
-            left_false = check_na((left[tar_col]==0).sum()[0])
-            right_true = check_na((right[tar_col]==1).sum()[0])
-            right_false = check_na((right[tar_col]==0).sum()[0])
+            left_true = left[left[tar_col[0]]==1]
+            left_true = left_true['weight'].sum()/left['weight'].sum()
+            left_false = left[left[tar_col[0]]==0]
+            left_false = left_false['weight'].sum()/left['weight'].sum()
+            
+            right_true = right[right[tar_col[0]]==1]
+            right_true = right_true['weight'].sum()/right['weight'].sum()
+            right_false = right[right[tar_col[0]]==0]
+            right_false = right_false['weight'].sum()/right['weight'].sum()
             
             if len(left)==0:
                 gini_left = 9999999
             else:
-                gini_left = 1 - (left_true/len(left))**2 - (left_false/len(left))**2
+                gini_left = 1 - (left_true)**2 - (left_false)**2
             if len(right)==0:
                 gini_right = 9999999
             else:
-                gini_right = 1 - (right_true/len(right))**2 - (right_false /len(right))**2
+                gini_right = 1 - (right_true)**2 - (right_false)**2
             
-            overall_gini = (check_na(len(left))/len(temp_df_clean))*gini_left + (check_na(len(right))/len(temp_df_clean))*gini_right
+            overall_gini = (check_na(left['weight'].sum())/temp_df_clean['weight'].sum())*gini_left + (check_na(right['weight'].sum())/temp_df_clean['weight'].sum())*gini_right
             weighted_gini = overall_gini/p
             
             
@@ -74,7 +79,7 @@ def get_split(dataset, tar_col):
             'left_node':left, 'right_node':right}   
 
 def to_terminal(subset, tar_col):
-    return ((subset[tar_col[0]]*subset['weight']).sum())/len(subset)
+    return ((subset[tar_col[0]]*subset['weight']).sum())/subset['weight'].sum()
 
 def split(node, max_depth, min_size, min_improvement, depth, tar_col):
     left, right = node['left_node'], node['right_node']
