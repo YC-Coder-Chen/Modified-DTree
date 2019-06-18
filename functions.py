@@ -276,4 +276,41 @@ def prune_with_valid(tree, validset, threshold, tar_col):
 
         if deep_code==flatten_tree:
             break
-    return nest_dict(flatten_tree)  
+    return nest_dict(flatten_tree) 
+
+def cross_validation_split(df, k_folds):
+    dataset_split = list()
+    dataset_copy = df.copy()
+    fold_size = int(len(df) / k_folds)
+    for i in range(k_folds):
+        fold = dataset_copy.sample(frac = 1 / k_folds)
+        dataset_copy = dataset_copy.drop(fold.index)
+        dataset_split.append(fold)
+    return dataset_split
+
+def accuracy(actual,pred):
+    score = 0
+    for i in range(len(actual)):
+        if actual[i] == pred[i]:
+            score += 1
+    return score/len(actual)
+
+def k_fold(ctg_col,ctn_col,tar_col,df,k_fold,max_depth = 100, min_size =1, min_improvement = 0.005):
+    folds = cross_validation_split(df, k_folds)
+    scores = list()
+    for fold in folds:
+        train_set = df.copy()
+        train_set = train_set.drop(fold.index)
+        test_set = fold
+        tree = tree_model(ctg_col,ctn_col,tar_col,train_set)
+        tree.pre_process()
+        tree.build_tree(max_depth, min_size, min_improvement)
+        preds = tree.predict(tree.dataset)
+        accu = accuracy(test_set[tar_col],preds)
+        scores.append(accu)
+    return scores
+
+
+
+
+
