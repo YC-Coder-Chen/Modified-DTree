@@ -283,12 +283,14 @@ def cross_validation_split(df, k_folds):
     dataset_copy = df.copy()
     fold_size = int(len(df) / k_folds)
     for i in range(k_folds):
-        fold = dataset_copy.sample(frac = 1 / k_folds)
+        fold = dataset_copy.sample(n = fold_size)
         dataset_copy = dataset_copy.drop(fold.index)
         dataset_split.append(fold)
     return dataset_split
 
 def accuracy(actual,pred):
+    if len(acutal) != len(pred):
+        raise Exception('Actual and prediction have different length')
     score = 0
     for i in range(len(actual)):
         if actual[i] == pred[i]:
