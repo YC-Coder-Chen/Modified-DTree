@@ -85,7 +85,7 @@ def split(node, max_depth, min_size, min_improvement, depth, tar_col):
     left, right = node['left_node'], node['right_node']
     previous_gini = node['best_gini']
     del(node['left_node'])
-    del(node['right_node'])
+    del(node['right_node']) 
 
     # check for a no split, cannot make any improvement
     if left.empty or right.empty:
@@ -100,6 +100,7 @@ def split(node, max_depth, min_size, min_improvement, depth, tar_col):
         node['left'], node['right'] = to_terminal(left, tar_col), to_terminal(right, tar_col)
         return
     # process left child
+    
     if len(left) <= min_size:
         node['left'] = to_terminal(left, tar_col)
     else:
@@ -142,14 +143,14 @@ def outerfunc(tree, dataset):
     def predict(tree, dataset):
         node = tree
         if isinstance(node['left'], dict):
-            left = dataset[(dataset[node['split_fet']]<node['best_value'])|(dataset[node['split_fet']].isna())]
+            left = dataset[(dataset[node['split_fet']]<node['best_value'])|(dataset[node['split_fet']].isna())].copy()
             p_left = dataset[(dataset[node['split_fet']]<node['best_value'])]['weight'].sum()/dataset[~dataset[node['split_fet']].isnull()]['weight'].sum()
             left.loc[dataset[dataset[node['split_fet']].isna()].index,'weight'] = left.loc[dataset[dataset[node['split_fet']].isna()].index,'weight']  * p_left
             predict(node['left'], left)
         else:
             node['predict'] = dataset
         if isinstance(node['right'], dict):
-            right = dataset[(dataset[node['split_fet']]>=node['best_value']) | (dataset[node['split_fet']].isna())]
+            right = dataset[(dataset[node['split_fet']]>=node['best_value']) | (dataset[node['split_fet']].isna())].copy()
             p_right = dataset[(dataset[node['split_fet']]>=node['best_value'])]['weight'].sum() /dataset[~dataset[node['split_fet']].isnull()]['weight'].sum()
             right.loc[dataset[dataset[node['split_fet']].isna()].index,'weight'] =  right.loc[dataset[dataset[node['split_fet']].isna()].index,'weight'] * p_right
             predict(node['right'], right)
@@ -181,19 +182,9 @@ def _nest_dict_rec(k, v, out):
     else:
         out[k] = v
 
-def flatten(d, parent_key='', sep='.'):
-    items = []
-    for k, v in d.items():
-        new_key = parent_key + sep + k if parent_key else k
-        if isinstance(v, collections.MutableMapping):
-            items.extend(flatten(v, new_key, sep=sep).items())
-        else:
-            items.append((new_key, v))
-    return dict(items) 
-
 def predict_with_na(tree, dataset):   
     tree = outerfunc(tree, dataset)
-    flattten_tree = flatten(tree)
+    flattten_tree = flatten_dot(tree)
     result_df = pd.DataFrame([])
     for i in flattten_tree.keys():
         if '.predict' in i:
@@ -203,6 +194,8 @@ def predict_with_na(tree, dataset):
             try:
                 left_prediction = flattten_tree[i.replace('predict','') + 'left']
                 df_left = df[(df[split_fet]<split_value) | (df[split_fet].isnull())].copy()
+                p_left = df[(df[split_fet]<split_value)]['weight'].sum()/df[~df[split_fet].isnull()]['weight'].sum()
+                df_left.loc[df[df[split_fet].isna()].index,'weight'] = df_left.loc[df[df[split_fet].isna()].index,'weight'] * p_left               
                 df_left['Prediction'] = df_left['weight'] * left_prediction
                 result_df = result_df.append(df_left['Prediction'].reset_index())
             except:
@@ -211,6 +204,8 @@ def predict_with_na(tree, dataset):
             try:
                 right_prediction = flattten_tree[i.replace('predict','') + 'right']
                 df_right = df[(df[split_fet]>=split_value)|(df[split_fet].isnull())].copy()
+                p_right = df[(df[split_fet]>=split_value)]['weight'].sum()/df[~df[split_fet].isnull()]['weight'].sum()
+                df_right.loc[df[df[split_fet].isna()].index,'weight'] = df_left.loc[df[df[split_fet].isna()].index,'weight'] * p_right              
                 df_right['Prediction'] = df_right['weight'] * right_prediction
                 result_df = result_df.append(df_right['Prediction'].reset_index())
             except:
