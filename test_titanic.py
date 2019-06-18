@@ -17,7 +17,7 @@ tree = tree_model(ctg_col,ctn_col,tar_col,path)
 tree.pre_process()
 
 # tree.dataset
-tree.build_tree(10000000, 1, 0.005)
+tree.build_tree(5, 1, 0.005)
 # # tree.root
 # tree.print_tree()
 # tree.predict(tree.dataset)

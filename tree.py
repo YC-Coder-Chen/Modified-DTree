@@ -7,14 +7,20 @@ warnings.filterwarnings("ignore")
 from functions import *
 
 class tree_model:
-    def __init__(self, ctg_col, ctn_col, tar_col, path):
+    def __init__(self, ctg_col, ctn_col, tar_col, path=''):
         self.ctg_col = ctg_col
         self.ctn_col = ctn_col
         self.tar_col = tar_col
         self.path = path
     
-    def pre_process(self, weight=1):
-        data = pd.read_csv(self.path)
+    def pre_process(self, data=pd.DataFrame([]),weight=1):
+        return_ind = 1
+        if data.empty:
+            return_ind = 0
+            try:
+                data = pd.read_csv(self.path)
+            except:
+                raise ValueError('If do not provide dataset, then must initial self.path')
         data['weight'] = weight
         data_dummy = pd.get_dummies(data,columns=self.ctg_col, dummy_na=False)
         for i in self.ctg_col:
@@ -28,9 +34,18 @@ class tree_model:
             except:
                 None
         self.dataset = data_dummy
+        if return_ind==1:
+            return data_dummy
     
-    def build_tree(self, max_depth, min_size, min_improvement):
-        root = get_split(self.dataset,self.tar_col)
+    def build_tree(self, max_depth, min_size, min_improvement, dataset=pd.DataFrame([])):
+        if dataset.empty:
+            root = get_split(self.dataset,self.tar_col)
+        else:
+            if 'weight' in dataset.columns:
+                print('You have defined your own weight!')
+            else:
+                dataset['weight']=1
+            root = get_split(dataset,self.tar_col)
         tar_col = self.tar_col
         split(root, max_depth, min_size, min_improvement, 1, tar_col)
         self.root = root
@@ -48,6 +63,10 @@ class tree_model:
     
     def predict(self,dataset):
         tree=self.root
+        if 'weight' in dataset.columns:
+            print('You have defined your own weight!')
+        else:
+            dataset['weight']=1
         return predict_with_na(tree, dataset)
      
     # fix the weight bug    
