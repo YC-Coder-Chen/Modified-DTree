@@ -11,13 +11,17 @@ from tree import tree_model
 ctg_col = ['Pclass','Sex','Embarked']
 ctn_col = ['Age','SibSp', 'Parch','Fare']
 tar_col = ['Survived']
-path = './Testdata/Titanic_train.csv'
+train_path = './Testdata/Titanic_train.csv'
+test_path = './Testdata/Titanic_test.csv'
 
-tree = tree_model(ctg_col,ctn_col,tar_col,path)
+tree = tree_model(ctg_col,ctn_col,tar_col,train_path)
 tree.pre_process()
 
 # tree.dataset
-tree.build_tree(5, 1, 0.005)
+tree.build_tree(10, 1, 0.005)
+# testset = pd.read_csv(test_path)
+# testset = tree.pre_process(testset)
+# prediction = tree.predict(testset)
 # # tree.root
 # tree.print_tree()
 # tree.predict(tree.dataset)

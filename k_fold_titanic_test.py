@@ -11,7 +11,7 @@ from tree import tree_model
 ctg_col = ['Pclass','Sex','Embarked']
 ctn_col = ['Age','SibSp', 'Parch','Fare']
 tar_col = ['Survived']
-path = './Testdata/train1.csv'
+path = './Testdata/Titanic_train.csv'
 
 tree = tree_model(ctg_col,ctn_col,tar_col,path)
 tree.pre_process()
