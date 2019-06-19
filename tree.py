@@ -76,12 +76,12 @@ class tree_model:
         tar_col = self.tar_col 
         return prune_with_valid(tree, validset, threshold, tar_col)   
 
-    def cross_validation_split(self,df, k_folds):
+    def cross_validation_split(self,df, k_folds,random_states = int(np.random.randint(low = 0, high = 10000, size =1))):
         dataset_split = list()
         dataset_copy = df.copy()
         fold_size = int(len(df) / k_folds)
         for i in range(k_folds):
-            fold = dataset_copy.sample(n = fold_size)
+            fold = dataset_copy.sample(n = fold_size,random_state = random_states)
             dataset_copy = dataset_copy.drop(fold.index)
             dataset_split.append(fold)
         return dataset_split
@@ -89,37 +89,30 @@ class tree_model:
     def accuracy(self,actual,pred):
         if len(actual) != len(pred):
             raise Exception('Actual and prediction have different length')
-        score = 0
-        for i in range(len(actual)):
-            if actual[i] == pred[i]:
-                score += 1
+        actual = actual.reshape(len(actual),1)
+        pred = pred.reshape(len(actual),1)
+        score = (actual == pred).sum()
         return score/len(actual)
     
-    def k_fold(self, k_fold,threshold = 0.5,max_depth = 100, min_size =1, min_improvement = 0.005):
+    def k_fold(self, k_fold,threshold = 0.5,max_depth = 5, min_size =1, min_improvement = 0.005):
         folds = self.cross_validation_split(self.dataset, k_fold)
+        full_dataset = self.dataset
         scores = list()
+        i = 1
         for fold in folds:
-            print(1)
-            train_set = self.original_data.copy()
-            train_set = train_set.drop(fold.index)
-            test_set = fold.reset_index()
-            tree = tree_model(self.ctg_col,self.ctn_col,self.tar_col)
-            tree.pre_process(train_set)
-            tree.build_tree(max_depth, min_size, min_improvement)
-            print(len(test_set))
-            preds = tree.predict(test_set)
-            print(len(preds))
-            preds['Prediction'] = np.where(preds['Prediction'] > threshold, 1,0)
-            print(preds)
-            print('div')
-            print(test_set[self.tar_col])
-            try:
-                accu = self.accuracy(test_set[self.tar_col].values,preds.values)
-            except:
-                train_set.to_csv('kfold_train.csv')
-                test_set.to_csv('kfold_testxs.csv')
-            scores.append(accu)
+            print('Working on the ' + str(i) + ' fold!')
+            trainset = full_dataset.drop(fold.index)
+            testset = fold
+            new_tree = tree_model(self.ctg_col,self.ctn_col,self.tar_col)
+            
+            new_tree.dataset = trainset
+            new_tree.build_tree(max_depth, min_size, min_improvement)
+            testset['preds'] = new_tree.predict(testset)
+            testset['preds'] = testset['preds'] >= threshold
+            accu = self.accuracy(testset[self.tar_col].values,testset['preds'].values)
             print(accu)
+            scores.append(accu)
+            i = i + 1
         return scores
     
 

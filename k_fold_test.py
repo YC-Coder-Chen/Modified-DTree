@@ -17,4 +17,6 @@ tree = tree_model(ctg_col,ctn_col,tar_col,path)
 tree.pre_process()
 
 # tree.dataset
-tree.k_fold(5)
+a = tree.k_fold(5)
+print(a)
+print(np.mean(a))
