@@ -123,8 +123,9 @@ def entropy(dataset, tar_col):
                 split_fet = i
                 best_value = med_value
                 best_IG = weighted_IG
-    
-
+                
+    return split_fet, best_value, best_IG
+   
 def get_split(dataset, tar_col):
     (split_fet,best_value,best_gini) = gini(dataset, tar_col)
     (left, right) = test_split(split_fet,best_value,dataset)
