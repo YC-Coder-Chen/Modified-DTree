@@ -72,6 +72,59 @@ def gini(dataset, tar_col):
     
     return split_fet,best_value,best_gini
 
+def entropy(dataset, tar_col):
+    
+    split_fet = None
+    best_value = None
+    best_IG = 0
+    
+    def cal_entropy(subset, tar_col):
+        ent_0 = subset[subset[tar_col[0]]==0]['weight'].sum()/subset['weight'].sum()
+        ent_1 = subset[subset[tar_col[0]]==1]['weight'].sum()/subset['weight'].sum()
+        if ent_0 == 0:
+            ent_0 = 0
+        else:
+            ent_0 = -ent_0*(np.log2(ent_0))
+        if ent_1 == 0:
+            ent_1 = 0
+        else:
+            ent_1 = -ent_1*(np.log2(ent_1))
+        return ent_0 + ent_1
+
+    for i in list(set(dataset.columns)-set(['weight'] + tar_col)):
+        temp_df = dataset[[i,'weight'] + tar_col].copy()
+        temp_df_clean = temp_df.dropna()
+        p = temp_df_clean['weight'].sum()/temp_df['weight'].sum()
+        if np.isnan(p):
+            print(temp_df,p)
+            
+        # calculate parent node entropy 
+        entropy_parent = cal_entropy(temp_df_clean, tar_col)
+        
+        attr_values = temp_df_clean[i].unique()
+        for med_value in cpu_median(attr_values):
+            left = temp_df_clean[temp_df_clean[i]<med_value].copy()  
+            right = temp_df_clean[temp_df_clean[i]>=med_value].copy()
+            
+            def check_na(a):
+                if np.isnan(a):
+                    return 0
+                else:
+                    return a
+                
+            entropy_left = cal_entropy(left, tar_col)
+            entropy_right = cal_entropy(right, tar_col)
+            
+            entropy_children = (check_na(left['weight'].sum())/temp_df_clean['weight'].sum())*entropy_left + (check_na(right['weight'].sum())/temp_df_clean['weight'].sum())*entropy_right
+            information_gain = entropy_parent - entropy_children
+            weighted_IG = information_gain/p
+            
+            if weighted_IG > best_IG:
+                split_fet = i
+                best_value = med_value
+                best_IG = weighted_IG
+    
+
 def get_split(dataset, tar_col):
     (split_fet,best_value,best_gini) = gini(dataset, tar_col)
     (left, right) = test_split(split_fet,best_value,dataset)
