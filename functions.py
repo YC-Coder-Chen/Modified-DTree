@@ -126,8 +126,13 @@ def entropy(dataset, tar_col):
                 
     return split_fet, best_value, best_IG
    
-def get_split(dataset, tar_col):
-    (split_fet,best_value,best_gini) = gini(dataset, tar_col)
+def get_split(dataset, tar_col, benchmark):
+    if benchmark == 'gini':
+        (split_fet,best_value,best_gini) = gini(dataset, tar_col)
+    elif benchmark == 'entropy':
+        (split_fet,best_value,best_gini) = entropy(dataset, tar_col)
+    else:
+        raise ValueError('wrong split benchmark input')    
     (left, right) = test_split(split_fet,best_value,dataset)
     return {'split_fet':split_fet, 'best_value':best_value, 'best_gini': best_gini,
             'left_node':left, 'right_node':right}   
@@ -135,7 +140,7 @@ def get_split(dataset, tar_col):
 def to_terminal(subset, tar_col):
     return ((subset[tar_col[0]]*subset['weight']).sum())/subset['weight'].sum()
 
-def split(node, max_depth, min_size, min_improvement, depth, tar_col):
+def split(node, max_depth, min_size, min_improvement, depth, tar_col, benchmark):
     left, right = node['left_node'], node['right_node']
     previous_gini = node['best_gini']
     del(node['left_node'])
@@ -158,28 +163,28 @@ def split(node, max_depth, min_size, min_improvement, depth, tar_col):
     if len(left) <= min_size:
         node['left'] = to_terminal(left, tar_col)
     else:
-        node['left'] = get_split(left, tar_col)
+        node['left'] = get_split(left, tar_col, benchmark)
         #if previous_gini - node['left']['best_gini']<min_improvement:
         if False:
             node['left'] = to_terminal(left, tar_col)
         else:
             node['Previous_left'] = to_terminal(left, tar_col)
             try:
-                split(node['left'], max_depth, min_size, min_improvement,depth+1, tar_col)
+                split(node['left'], max_depth, min_size, min_improvement,depth+1, tar_col, benchmark)
             except:
                 node['left'] = to_terminal(left, tar_col)
     # process right child
     if len(right) <= min_size:
         node['right'] = to_terminal(right, tar_col)
     else:
-        node['right'] = get_split(right, tar_col)
+        node['right'] = get_split(right, tar_col, benchmark)
         #if previous_gini - node['right']['best_gini']<min_improvement:
         if False:
             node['right'] = to_terminal(right, tar_col)
         else:
             node['Previous_right'] = to_terminal(right, tar_col)
             try:
-                split(node['right'], max_depth, min_size, min_improvement,depth+1, tar_col)
+                split(node['right'], max_depth, min_size, min_improvement,depth+1, tar_col, benchmark)
             except:
                 node['right'] = to_terminal(right, tar_col)
 

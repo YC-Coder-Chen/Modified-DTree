@@ -14,12 +14,21 @@ tar_col = ['Survived']
 train_path = './Testdata/Titanic_train.csv'
 test_path = './Testdata/Titanic_test.csv'
 
+train = pd.read_csv(train_path)
+test = pd.read_csv(test_path)
+
 tree = tree_model(ctg_col,ctn_col,tar_col,train_path)
 tree.pre_process()
+tree.build_tree(5, 1, 0.005, 'entropy')
+test = tree.pre_process(test)
+test['Survived'] = tree.predict(test)
+
+####tree = tree_model(ctg_col,ctn_col,tar_col,train_path)
+####tree.pre_process()
 
 # tree.dataset
-tree.build_tree(10, 1, 0.005)
-# testset = pd.read_csv(test_path)
+#tree.build_tree(5, 1, 0.005, 'gini')
+#### testset = pd.read_csv(test_path)
 # testset = tree.pre_process(testset)
 # prediction = tree.predict(testset)
 # # tree.root

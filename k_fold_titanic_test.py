@@ -17,6 +17,10 @@ tree = tree_model(ctg_col,ctn_col,tar_col,path)
 tree.pre_process()
 
 # tree.dataset
-a = tree.k_fold(5)
+a = tree.k_fold(5, 0.5, 10, 1, 0.005, 'entropy', 1234)
+print(a)
+print(np.mean(a))
+
+a = tree.k_fold(5, 0.5, 10, 1, 0.005, 'gini', 1234)
 print(a)
 print(np.mean(a))

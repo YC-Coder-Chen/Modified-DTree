@@ -38,17 +38,17 @@ class tree_model:
         if return_ind==1:
             return data_dummy
     
-    def build_tree(self, max_depth, min_size, min_improvement, dataset=pd.DataFrame([])):
+    def build_tree(self, max_depth, min_size, min_improvement, benchmark ='gini',dataset=pd.DataFrame([])):
         if dataset.empty:
-            root = get_split(self.dataset,self.tar_col)
+            root = get_split(self.dataset,self.tar_col, benchmark)
         else:
             if 'weight' in dataset.columns:
                 print('You have defined your own weight!')
             else:
                 dataset['weight']=1
-            root = get_split(dataset,self.tar_col)
+            root = get_split(dataset,self.tar_col, benchmark)
         tar_col = self.tar_col
-        split(root, max_depth, min_size, min_improvement, 1, tar_col)
+        split(root, max_depth, min_size, min_improvement, 1, tar_col, benchmark)
         self.root = root
         
     def print_tree(self, depth=0):
@@ -76,7 +76,7 @@ class tree_model:
         tar_col = self.tar_col 
         return prune_with_valid(tree, validset, threshold, tar_col)   
 
-    def cross_validation_split(self,df, k_folds,random_states = int(np.random.randint(low = 0, high = 10000, size =1))):
+    def cross_validation_split(self,df, k_folds,random_states):
         dataset_split = list()
         dataset_copy = df.copy()
         fold_size = int(len(df) / k_folds)
@@ -94,8 +94,8 @@ class tree_model:
         score = (actual == pred).sum()
         return score/len(actual)
     
-    def k_fold(self, k_fold,threshold = 0.5,max_depth = 5, min_size =1, min_improvement = 0.005):
-        folds = self.cross_validation_split(self.dataset, k_fold)
+    def k_fold(self, k_fold,threshold = 0.5,max_depth = 5, min_size =1, min_improvement = 0.005, benchmark='gini', random_states = int(np.random.randint(low = 0, high = 10000, size =1))):
+        folds = self.cross_validation_split(self.dataset, k_fold, random_states)
         full_dataset = self.dataset
         scores = list()
         i = 1
@@ -106,7 +106,7 @@ class tree_model:
             new_tree = tree_model(self.ctg_col,self.ctn_col,self.tar_col)
             
             new_tree.dataset = trainset
-            new_tree.build_tree(max_depth, min_size, min_improvement)
+            new_tree.build_tree(max_depth, min_size, min_improvement,benchmark)
             testset['preds'] = new_tree.predict(testset)
             testset['preds'] = testset['preds'] >= threshold
             accu = self.accuracy(testset[self.tar_col].values,testset['preds'].values)
