@@ -113,7 +113,11 @@ class tree_model:
             print(preds)
             print('div')
             print(test_set[self.tar_col])
-            accu = self.accuracy(test_set[self.tar_col].values,preds.values)
+            try:
+                accu = self.accuracy(test_set[self.tar_col].values,preds.values)
+            except:
+                train_set.to_csv('kfold_train.csv')
+                test_set.to_csv('kfold_testxs.csv')
             scores.append(accu)
             print(accu)
         return scores
