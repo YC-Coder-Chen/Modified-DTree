@@ -19,6 +19,7 @@ class tree_model:
             return_ind = 0
             try:
                 data = pd.read_csv(self.path)
+                self.original_data = data
             except:
                 raise ValueError('If do not provide dataset, then must initial self.path')
         data['weight'] = weight
@@ -75,5 +76,46 @@ class tree_model:
         tar_col = self.tar_col 
         return prune_with_valid(tree, validset, threshold, tar_col)   
 
+    def cross_validation_split(self,df, k_folds):
+        dataset_split = list()
+        dataset_copy = df.copy()
+        fold_size = int(len(df) / k_folds)
+        for i in range(k_folds):
+            fold = dataset_copy.sample(n = fold_size)
+            dataset_copy = dataset_copy.drop(fold.index)
+            dataset_split.append(fold)
+        return dataset_split
 
+    def accuracy(self,actual,pred):
+        if len(actual) != len(pred):
+            raise Exception('Actual and prediction have different length')
+        score = 0
+        for i in range(len(actual)):
+            if actual[i] == pred[i]:
+                score += 1
+        return score/len(actual)
+    
+    def k_fold(self, k_fold,threshold = 0.5,max_depth = 100, min_size =1, min_improvement = 0.005):
+        folds = self.cross_validation_split(self.dataset, k_fold)
+        scores = list()
+        for fold in folds:
+            print(1)
+            train_set = self.original_data.copy()
+            train_set = train_set.drop(fold.index)
+            test_set = fold.reset_index()
+            tree = tree_model(self.ctg_col,self.ctn_col,self.tar_col)
+            tree.pre_process(train_set)
+            tree.build_tree(max_depth, min_size, min_improvement)
+            print(len(test_set))
+            preds = tree.predict(test_set)
+            print(len(preds))
+            preds['Prediction'] = np.where(preds['Prediction'] > threshold, 1,0)
+            print(preds)
+            print('div')
+            print(test_set[self.tar_col])
+            accu = self.accuracy(test_set[self.tar_col].values,preds.values)
+            scores.append(accu)
+            print(accu)
+        return scores
+    
 
